@@ -1,0 +1,72 @@
+#!/bin/bash
+
+PACT_BROKER_BASE_URL="http://127.0.0.1:8085"
+PACT_BROKER_USERNAME="pactbroker"
+PACT_BROKER_PASSWORD="pactbroker"
+
+PROVIDER_NAME="UserService"
+CONSUMER_NAME="UserServiceClient"
+
+# Webhook URLs - Adjust these to point to your provider service or notification service
+PROVIDER_WEBHOOK_URL="http://localhost:5000/provider-webhook"   # Update with actual endpoint
+NOTIFICATION_WEBHOOK_URL="http://localhost:5000/notification-webhook"  # Update with actual endpoint
+
+# Function to register webhook for new pact publication
+register_publish_webhook() {
+  curl -u "${PACT_BROKER_USERNAME}:${PACT_BROKER_PASSWORD}" \
+    -X POST "${PACT_BROKER_BASE_URL}/webhooks" \
+    -H "Content-Type: application/json" \
+    -d '{
+          "description": "Notify provider when a new pact is published",
+          "events": [{
+            "name": "contract_published"
+          }],
+          "request": {
+            "method": "POST",
+            "url": "'"${PROVIDER_WEBHOOK_URL}"'",
+            "headers": {
+              "Content-Type": "application/json"
+            },
+            "body": "{\"consumer\": \"'"${CONSUMER_NAME}"'\", \"provider\": \"'"${PROVIDER_NAME}"'\", \"event\": \"new_pact_published\"}"
+          },
+          "consumer": {
+            "name": "'"${CONSUMER_NAME}"'"
+          },
+          "provider": {
+            "name": "'"${PROVIDER_NAME}"'"
+          }
+        }'
+  echo "Webhook for pact publication registered."
+}
+
+# Function to register webhook for failed pact verification
+register_verification_failed_webhook() {
+  curl -u "${PACT_BROKER_USERNAME}:${PACT_BROKER_PASSWORD}" \
+    -X POST "${PACT_BROKER_BASE_URL}/webhooks" \
+    -H "Content-Type: application/json" \
+    -d '{
+          "description": "Notify on pact verification failure",
+          "events": [{
+            "name": "verification_failed"
+          }],
+          "request": {
+            "method": "POST",
+            "url": "'"${NOTIFICATION_WEBHOOK_URL}"'",
+            "headers": {
+              "Content-Type": "application/json"
+            },
+            "body": "{\"consumer\": \"'"${CONSUMER_NAME}"'\", \"provider\": \"'"${PROVIDER_NAME}"'\", \"event\": \"verification_failed\"}"
+          },
+          "consumer": {
+            "name": "'"${CONSUMER_NAME}"'"
+          },
+          "provider": {
+            "name": "'"${PROVIDER_NAME}"'"
+          }
+        }'
+  echo "Webhook for verification failure registered."
+}
+
+# Run both webhook registrations
+register_publish_webhook
+register_verification_failed_webhook

@@ -1,0 +1,40 @@
+version: '3'
+
+services:
+#Stores all the contracts (pacts) and metadata related to interactions between consumer and provider services.
+  postgres:
+    image: postgres
+    healthcheck:
+      test: psql postgres --command "select 1" -U postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: postgres
+
+#Central hub for managing pacts (contracts) between consumer and provider services.
+  broker_app:
+    image: dius/pact-broker
+    ports:
+      - "8085:80"
+    links:
+      - postgres
+    environment:
+      PACT_BROKER_DATABASE_USERNAME: postgres
+      PACT_BROKER_DATABASE_PASSWORD: password
+      PACT_BROKER_DATABASE_HOST: postgres
+      PACT_BROKER_DATABASE_NAME: postgres
+      PACT_BROKER_BASIC_AUTH_USERNAME: pactbroker
+      PACT_BROKER_BASIC_AUTH_PASSWORD: pactbroker
+
+#Acts as a secure entry point for accessing the Pact Broker over HTTPS
+  nginx:
+    image: nginx:alpine
+    links:
+      - broker_app:pactbroker
+    volumes:
+      - ./ssl/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./ssl:/etc/nginx/ssl
+    ports:
+      - "8443:443"

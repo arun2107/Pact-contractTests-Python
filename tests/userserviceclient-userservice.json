@@ -1,0 +1,61 @@
+{
+  "consumer": {
+    "name": "UserServiceClient"
+  },
+  "provider": {
+    "name": "UserService"
+  },
+  "interactions": [
+    {
+      "description": "a request for UserA with details",
+      "providerState": "UserA exists and is not an administrator",
+      "request": {
+        "method": "get",
+        "path": "/users/UserA"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+        },
+        "body": {
+          "name": "UserA",
+          "id": "1234567",
+          "admin": false,
+          "contact": {
+            "email": "usera@example.com",
+            "phone": "123-456-7890"
+          },
+          "address": {
+            "street": "123 Main St",
+            "city": "Hometown",
+            "state": "CA",
+            "zip": "12345"
+          }
+        },
+        "matchingRules": {
+          "$.body": {
+            "match": "type"
+          }
+        }
+      }
+    },
+    {
+      "description": "a request for UserA",
+      "providerState": "UserA does not exist",
+      "request": {
+        "method": "get",
+        "path": "/users/UserA"
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+        }
+      }
+    }
+  ],
+  "metadata": {
+    "pactSpecification": {
+      "version": "2.0.0"
+    }
+  }
+}
